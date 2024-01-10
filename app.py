@@ -161,33 +161,12 @@ def input():
     return render_template('input.html')
 
 
-# Route to display the registration page for students
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if request.method == 'POST':
-        roll_no = request.form['roll_no']
-        name = request.form['name']
-        password = request.form['password']
-        confirm_password = request.form['confirm_password']
-
-        # Check if the password and confirm_password match
-        if password != confirm_password:
-            return render_template('register.html', error='Passwords do not match')
-
-        # Check if the roll_no is already in the database
-        existing_user = query_db('SELECT * FROM students WHERE roll_no = ?', (roll_no,), one=True)
-        if existing_user:
-            return render_template('register.html', error='Roll number already exists')
-
-        # Insert the new user into the database
-        db = get_db()
-        db.execute('INSERT INTO students (roll_no, name, password) VALUES (?, ?, ?)', (roll_no, name, password))
-        db.commit()
-
-        # Redirect to the login page after successful registration
-        return redirect(url_for('login'))
-
-    return render_template('register.html')
+@app.route('/admin_profile')
+def admin_profile():
+    admin_username = session.get('admin_username')
+    admin_dept = session.get('admin_dept')
+    admin_class = session.get('admin_class')
+    return jsonify({'admin_username': admin_username, 'admin_dept': admin_dept, 'admin_class': admin_class})
 
 
 # Route to display the login page for students
@@ -272,7 +251,7 @@ def process_qr_code():
 
         # Verify the key against the last generated key in QR_key
         last_generated_key = query_db('SELECT key_field FROM QR_key ORDER BY id DESC LIMIT 1 OFFSET 4', one=True)
-        if last_generated_key and key == last_generated_key['key_field']:
+        if key == last_generated_key['key_field']:
             # Key is valid, update attendance in Temp_attendance for the logged-in student
             roll_no = session.get('roll_no')
             db = get_db()
@@ -287,15 +266,61 @@ def process_qr_code():
     return jsonify({'error': 'Invalid QR code format or key'})
 
 
-@app.route('/admin_dashboard')
+@app.route('/admin_dashboard', methods=['POST', 'GET'])
 def admin_dashboard():
     # Check if the user is logged in as an admin
     if 'admin_username' not in session:
         # Redirect to the admin login page if not logged in
         return redirect(url_for('admin_login'))
 
-    # Admin is logged in, render the admin dashboard page
+    no_records_found = False
+
+    if request.method == 'POST':
+        # If it's a POST request, retrieve form data
+        subject_name = request.form['subject_name']
+        time_slot = request.form['time_slot']
+        date = request.form['date']
+
+        # Run a query to fetch relevant records based on selected criteria
+        records = query_db('SELECT * FROM Temp_attendance WHERE subject = ? AND time = ? AND date = ?',
+                           (subject_name, time_slot, date))
+
+        if not records:
+            # No records found, set the flag
+            no_records_found = True
+
+        # Render the admin_dashboard template with the fetched records or no records message
+        return render_template('admin_dashboard.html', records=records, no_records_found=no_records_found)
+
+    # Admin is logged in, render the admin dashboard page (GET request)
     return render_template('admin_dashboard.html')
+
+@app.route('/admin_dashboard/save', methods=['POST'])
+def save_attendance_changes():
+    # Check if the user is logged in as an admin
+    if 'admin_username' not in session:
+        # Redirect to the admin login page if not logged in
+        return redirect(url_for('admin_login'))
+
+    if request.method == 'POST':
+        # Retrieve attendance changes from the form submission
+        attendance_marked = request.form.getlist('attendance_marked[]')
+
+        # Retrieve subject_name, time_slot, and date from the session or form data
+        subject_name = session.get('subject_name')  # Add this line
+        time_slot = session.get('time_slot')  # Add this line
+        date = session.get('date')  # You may need to adjust this based on where the date is stored
+
+        # Update the database based on the marked attendance changes
+        db = get_db()
+        for roll_no in attendance_marked:
+            db.execute('UPDATE Temp_attendance SET attendance = 1 WHERE rollno = ? AND subject = ? AND date = ? AND time = ?',
+                       (roll_no, subject_name, date, time_slot))
+        db.commit()
+
+    # Redirect back to the admin_dashboard page
+    return redirect(url_for('admin_dashboard'))
+
 
 
 @app.route('/profile')
@@ -311,6 +336,11 @@ def logout():
     session.clear()
     return jsonify({'message': 'Logged out successfully'})
 
+@app.route('/admin_logout')
+def admin_logout():
+    session.clear()
+    jsonify({'message': 'Admin logged out successfully'})
+    return render_template('admin_login.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
