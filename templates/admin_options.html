@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Options</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f0f0f0;
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    #options {
+      margin-top: 20px;
+    }
+
+    #generateQR, #adminDashboard {
+      padding: 10px;
+      margin: 10px;
+      width: 200px;
+      cursor: pointer;
+      box-sizing: border-box;
+    }
+
+    #generateQR {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+    }
+
+    #adminDashboard {
+      background-color: #2196F3;
+      color: white;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Welcome Admin!</h1>
+  <div id="options">
+    <a href="{{ url_for('input') }}"><button id="generateQR">Generate QR Code</button></a>
+    <a href="{{ url_for('admin_dashboard') }}"><button id="adminDashboard">Admin Dashboard</button></a>
+  </div>
+</body>
+</html>
