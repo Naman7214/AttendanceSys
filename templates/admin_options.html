@@ -1,43 +1,95 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
   <title>Admin Options</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       text-align: center;
-      background-color: #f0f0f0;
+      background-color: #D3E3F1;
       margin: 0;
       padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    #container {
+      display: flex;
+      width: 80%;
+      height: 80%;
+      overflow: hidden;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    #left-side {
+      /* flex: 1; */
+      display: flex;
+      background-color: rgb(12, 140, 160);
+      color: white;
+      padding: 20px;
+      width: 50%;
+      box-sizing: border-box;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 48px rgb(0, 0, 0);
+      border-top-right-radius:10px ;
+      border-bottom-right-radius:10px ;
+
+      z-index: 2;
+    }
+
+    #right-side {
+      /* flex: 1; */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 50%;
+      background-color: white;
+      padding: 20px;
+      box-sizing: border-box;
     }
 
     h1 {
-      color: #333;
       margin-bottom: 20px;
     }
 
     #options {
-      margin-top: 20px;
       display: flex;
       flex-direction: column;
       align-items: center;
     }
 
     button {
-      padding: 10px;
+      padding: 15px;
+      /* Increased padding */
       margin: 10px;
-      width: 200px;
+      width: 250px;
+      /* Increased width */
       cursor: pointer;
       box-sizing: border-box;
       border: none;
-      border-radius: 5px;
-      font-size: 16px;
+      border-radius: 8px;
+      /* Adjusted border-radius for a slightly rounder appearance */
+      font-size: 18px;
+      /* Adjusted font size */
+    }
+
+
+    #studentcnt {
+      background-color: #4CAF50;
+      color: white;
     }
 
     #generateQR {
-      background-color: #4CAF50;
+      background-color: #8B8000;
       color: white;
     }
 
@@ -59,13 +111,13 @@
     .modal {
       display: none;
       position: fixed;
-      z-index: 1;
+      z-index: 3;
       left: 0;
       top: 0;
       width: 100%;
       height: 100%;
       overflow: auto;
-      background-color: rgba(0,0,0,0.9);
+      background-color: rgba(0, 0, 0, 0.9);
       padding-top: 60px;
     }
 
@@ -100,13 +152,21 @@
     }
   </style>
 </head>
+
 <body>
-  <h1>Welcome Admin!</h1>
-  <div id="options">
-    <a href="{{ url_for('input') }}"><button id="generateQR">Generate QR Code</button></a>
-    <a href="{{ url_for('admin_dashboard') }}"><button id="adminDashboard">Admin Dashboard</button></a>
-    <button id="adminProfile" onclick="openAdminProfileModal()">Admin Profile</button>
-    <a href="{{ url_for('admin_logout') }}"><button id="adminLogout">Logout</button></a>
+  <div id="container">
+    <div id="left-side">
+      <h1>Welcome {{ name }}!</h1>
+    </div>
+    <div id="right-side">
+      <div id="options">
+        <a href="{{ url_for('te_tt') }}"><button id="generateQR">Generate QR Code</button></a>
+        <a href="{{ url_for('admin_dashboard') }}"><button id="adminDashboard">Admin Dashboard</button></a>
+        <a href="{{ url_for('studentcnt') }}"><button id="studentcnt">Student Count</button></a>
+        <button id="adminProfile" onclick="openAdminProfileModal()">Admin Profile</button>
+        <a href="{{ url_for('admin_logout') }}"><button id="adminLogout">Logout</button></a>
+      </div>
+    </div>
   </div>
 
   <!-- The Modal -->
@@ -122,65 +182,65 @@
   <script>
     // Function to get admin profile information from the server
     function getAdminProfile() {
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", "/admin_profile", true);
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState == 4) {
-                if (xhr.status == 200) {
-                    var adminProfile = JSON.parse(xhr.responseText);
-                    // Display admin profile information
-                    document.getElementById('modalProfileText').innerText = 'Admin: ' + adminProfile.admin_username + ', Dept: ' + adminProfile.admin_dept + ', Class: ' + adminProfile.admin_class;
-                } else {
-                    console.error('Failed to retrieve admin profile');
-                }
-            }
-        };
-        xhr.send();
+      var xhr = new XMLHttpRequest();
+      xhr.open("GET", "/admin_profile", true);
+      xhr.onreadystatechange = function () {
+        if (xhr.readyState == 4) {
+          if (xhr.status == 200) {
+            var adminProfile = JSON.parse(xhr.responseText);
+            // Display admin profile information
+            document.getElementById('modalProfileText').innerText = 'Admin: ' + adminProfile.admin_username + ', Dept: ' + adminProfile.admin_dept + ', Class: ' + adminProfile.admin_class;
+          } else {
+            console.error('Failed to retrieve admin profile');
+          }
+        }
+      };
+      xhr.send();
     }
 
     // Function to logout the admin
     function adminLogout() {
-        fetch('/admin_logout')
-            .then(response => response.json())
-            .then(data => {
-                console.log('Logout response:', data); // Log the response for debugging
+      fetch('/admin_logout')
+        .then(response => response.json())
+        .then(data => {
+          console.log('Logout response:', data); // Log the response for debugging
 
-                if (data.message === 'Admin logged out successfully') {
-                    console.log('Redirecting to admin_login...');
-                    window.location.href = '/admin_login'; // Redirect to admin_login page on successful logout
-                } else {
-                    console.error('Logout failed:', data.message);
-                    // Handle any error or display a message to the user
-                }
-            })
-            .catch(error => {
-                console.error('Logout failed:', error);
-                // Handle any error or display a message to the user
-            });
+          if (data.message === 'Admin logged out successfully') {
+            console.log('Redirecting to admin_login...');
+            window.location.href = '/admin_login'; // Redirect to admin_login page on successful logout
+          } else {
+            console.error('Logout failed:', data.message);
+            // Handle any error or display a message to the user
+          }
+        })
+        .catch(error => {
+          console.error('Logout failed:', error);
+          // Handle any error or display a message to the user
+        });
     }
 
     // Function to open the admin profile modal
     function openAdminProfileModal() {
-        getAdminProfile();  // Update admin profile before opening modal
-        var modal = document.getElementById('profileModal');
-        modal.style.display = 'block';
+      getAdminProfile(); // Update admin profile before opening modal
+      var modal = document.getElementById('profileModal');
+      modal.style.display = 'block';
     }
 
     // Function to close the admin profile modal
     function closeProfileModal() {
-        var modal = document.getElementById('profileModal');
-        modal.style.display = 'none';
+      var modal = document.getElementById('profileModal');
+      modal.style.display = 'none';
     }
 
     // Initialize the admin profile
     function initializeAdminProfile() {
-        console.log('Initializing Admin Profile...');
-        getAdminProfile();
+      console.log('Initializing Admin Profile...');
+      getAdminProfile();
     }
 
     // Call the initialization function
     initializeAdminProfile();
-</script>
-
+  </script>
 </body>
+
 </html>
